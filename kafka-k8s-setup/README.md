@@ -102,21 +102,40 @@ Edit `helm/kafka/values.yaml` to customize:
 
 ## Troubleshooting
 
-### Image Pull Errors
+### Image Pull Errors (Bitnami Subscription Required)
 If you see `ImagePullBackOff` errors:
 ```bash
 kubectl describe pod -n kafka kafka-controller-0
 ```
 
-**Solution**: Update the image tag in `helm/kafka/values.yaml`:
+**Issue**: Bitnami changed their policy (Aug 2025) - most images now require a subscription.
+
+**Solutions**:
+
+**Option 1**: Use Strimzi Kafka Operator (Recommended for production)
+```bash
+kubectl create namespace kafka
+kubectl create -f 'https://strimzi.io/install/latest?namespace=kafka' -n kafka
+# Then apply Kafka custom resource
+```
+
+**Option 2**: Use Confluent Kafka (publicly available)
+Update `helm/kafka/values.yaml`:
 ```yaml
 image:
   registry: docker.io
-  repository: bitnami/kafka
-  tag: "3.6.1"  # or use latest available version
+  repository: confluentinc/cp-kafka
+  tag: "7.5.0"
 ```
 
-Note: Bitnami changed image distribution policy (Aug 2025). Newer images may require subscription.
+**Option 3**: Use local/minikube testing
+```bash
+# For local development only
+kubectl run kafka --image=wurstmeister/kafka:latest -n kafka
+```
+
+**Option 4**: Subscribe to Bitnami (for production use)
+Visit: https://bitnami.com
 
 ### Pods not starting
 ```bash
