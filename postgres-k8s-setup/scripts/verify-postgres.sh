@@ -4,6 +4,13 @@ set -e
 NAMESPACE=${NAMESPACE:-"postgres"}
 DATABASE_NAME=${DATABASE_NAME:-"learning_platform"}
 
+# Get PostgreSQL password from secret
+POSTGRES_PASSWORD=$(kubectl get secret -n "$NAMESPACE" postgres-postgresql -o jsonpath='{.data.postgres-password}' 2>/dev/null | base64 -d)
+if [ -z "$POSTGRES_PASSWORD" ]; then
+    echo "Warning: Could not retrieve PostgreSQL password from secret, trying without password..."
+    POSTGRES_PASSWORD=""
+fi
+
 echo "=== PostgreSQL Deployment Verification ==="
 echo ""
 
@@ -43,7 +50,7 @@ fi
 # Check database connectivity
 echo ""
 echo "3. Checking database connectivity..."
-if kubectl exec -n "$NAMESPACE" postgres-postgresql-0 -- psql -U postgres -c "SELECT 1;" &> /dev/null; then
+if kubectl exec -n "$NAMESPACE" postgres-postgresql-primary-0 -- env PGPASSWORD="$POSTGRES_PASSWORD" psql -U postgres -c "SELECT 1;" &> /dev/null; then
     echo "   ✓ Database is accessible on port 5432"
 else
     echo "   ✗ Cannot connect to database"
@@ -53,14 +60,14 @@ fi
 # Check PostgreSQL version
 echo ""
 echo "4. Checking PostgreSQL version..."
-PG_VERSION=$(kubectl exec -n "$NAMESPACE" postgres-postgresql-0 -- psql -U postgres -t -c "SELECT version();" | head -1)
+PG_VERSION=$(kubectl exec -n "$NAMESPACE" postgres-postgresql-primary-0 -- env PGPASSWORD="$POSTGRES_PASSWORD" psql -U postgres -t -c "SELECT version();" | head -1)
 echo "   PostgreSQL version: $PG_VERSION"
 
 # Check database exists
 echo ""
 echo "5. Checking database: $DATABASE_NAME"
-DB_EXISTS=$(kubectl exec -n "$NAMESPACE" postgres-postgresql-0 -- \
-    psql -U postgres -t -c "SELECT 1 FROM pg_database WHERE datname='$DATABASE_NAME';" | tr -d ' ')
+DB_EXISTS=$(kubectl exec -n "$NAMESPACE" postgres-postgresql-primary-0 -- \
+    env PGPASSWORD="$POSTGRES_PASSWORD" psql -U postgres -t -c "SELECT 1 FROM pg_database WHERE datname='$DATABASE_NAME';" | tr -d ' ')
 
 if [ "$DB_EXISTS" = "1" ]; then
     echo "   ✓ Database '$DATABASE_NAME' exists"
@@ -72,13 +79,13 @@ fi
 # Check migrations
 echo ""
 echo "6. Checking applied migrations..."
-MIGRATIONS_TABLE=$(kubectl exec -n "$NAMESPACE" postgres-postgresql-0 -- \
-    psql -U postgres -d "$DATABASE_NAME" -t -c \
+MIGRATIONS_TABLE=$(kubectl exec -n "$NAMESPACE" postgres-postgresql-primary-0 -- \
+    env PGPASSWORD="$POSTGRES_PASSWORD" psql -U postgres -d "$DATABASE_NAME" -t -c \
     "SELECT EXISTS (SELECT FROM pg_tables WHERE tablename = 'schema_migrations');" 2>/dev/null | tr -d ' ')
 
 if [ "$MIGRATIONS_TABLE" = "t" ]; then
-    MIGRATION_COUNT=$(kubectl exec -n "$NAMESPACE" postgres-postgresql-0 -- \
-        psql -U postgres -d "$DATABASE_NAME" -t -c \
+    MIGRATION_COUNT=$(kubectl exec -n "$NAMESPACE" postgres-postgresql-primary-0 -- \
+        env PGPASSWORD="$POSTGRES_PASSWORD" psql -U postgres -d "$DATABASE_NAME" -t -c \
         "SELECT COUNT(*) FROM schema_migrations;" | tr -d ' ')
     echo "   ✓ Migrations table exists"
     echo "   Applied migrations: $MIGRATION_COUNT"
@@ -86,8 +93,8 @@ if [ "$MIGRATIONS_TABLE" = "t" ]; then
     if [ "$MIGRATION_COUNT" -gt 0 ]; then
         echo ""
         echo "   Recent migrations:"
-        kubectl exec -n "$NAMESPACE" postgres-postgresql-0 -- \
-            psql -U postgres -d "$DATABASE_NAME" -c \
+        kubectl exec -n "$NAMESPACE" postgres-postgresql-primary-0 -- \
+            env PGPASSWORD="$POSTGRES_PASSWORD" psql -U postgres -d "$DATABASE_NAME" -c \
             "SELECT version, applied_at FROM schema_migrations ORDER BY applied_at DESC LIMIT 5;"
     fi
 else
@@ -97,8 +104,8 @@ fi
 # Check schema tables
 echo ""
 echo "7. Checking schema tables..."
-TABLES=$(kubectl exec -n "$NAMESPACE" postgres-postgresql-0 -- \
-    psql -U postgres -d "$DATABASE_NAME" -t -c \
+TABLES=$(kubectl exec -n "$NAMESPACE" postgres-postgresql-primary-0 -- \
+    env PGPASSWORD="$POSTGRES_PASSWORD" psql -U postgres -d "$DATABASE_NAME" -t -c \
     "SELECT tablename FROM pg_tables WHERE schemaname='public';" | grep -v "^$" || true)
 TABLE_COUNT=$(echo "$TABLES" | grep -v "^$" | wc -l)
 
@@ -115,8 +122,8 @@ fi
 # Test read operation
 echo ""
 echo "8. Testing SELECT query..."
-if kubectl exec -n "$NAMESPACE" postgres-postgresql-0 -- \
-    psql -U postgres -d "$DATABASE_NAME" -c "SELECT NOW();" &> /dev/null; then
+if kubectl exec -n "$NAMESPACE" postgres-postgresql-primary-0 -- \
+    env PGPASSWORD="$POSTGRES_PASSWORD" psql -U postgres -d "$DATABASE_NAME" -c "SELECT NOW();" &> /dev/null; then
     echo "   ✓ SELECT query successful"
 else
     echo "   ✗ SELECT query failed"
@@ -127,8 +134,8 @@ fi
 echo ""
 echo "9. Testing INSERT query..."
 TEST_TABLE="test_connectivity_$(date +%s)"
-kubectl exec -n "$NAMESPACE" postgres-postgresql-0 -- \
-    psql -U postgres -d "$DATABASE_NAME" <<EOF &> /dev/null
+kubectl exec -n "$NAMESPACE" postgres-postgresql-primary-0 -- \
+    env PGPASSWORD="$POSTGRES_PASSWORD" psql -U postgres -d "$DATABASE_NAME" <<EOF &> /dev/null
 CREATE TABLE $TEST_TABLE (id SERIAL PRIMARY KEY, value TEXT);
 INSERT INTO $TEST_TABLE (value) VALUES ('test');
 SELECT * FROM $TEST_TABLE;
@@ -145,20 +152,20 @@ fi
 # Check for errors in logs
 echo ""
 echo "10. Checking for errors in logs..."
-ERROR_COUNT=$(kubectl logs -n "$NAMESPACE" postgres-postgresql-0 --tail=100 2>/dev/null | grep -i "error\|fatal" | grep -v "FATAL:  role" | wc -l || echo "0")
+ERROR_COUNT=$(kubectl logs -n "$NAMESPACE" postgres-postgresql-primary-0 --tail=100 2>/dev/null | grep -i "error\|fatal" | grep -v "FATAL:  role" | wc -l || echo "0")
 if [ "$ERROR_COUNT" -eq 0 ]; then
     echo "   ✓ No errors found in recent logs"
 else
     echo "   ⚠ Found $ERROR_COUNT error/fatal messages in logs"
-    echo "   Run: kubectl logs -n $NAMESPACE postgres-postgresql-0 | grep -i error"
+    echo "   Run: kubectl logs -n $NAMESPACE postgres-postgresql-primary-0 | grep -i error"
 fi
 
 # Check replication lag (if replicas exist)
 if [ "$REPLICA_PODS" -gt 0 ]; then
     echo ""
     echo "11. Checking replication lag..."
-    kubectl exec -n "$NAMESPACE" postgres-postgresql-0 -- \
-        psql -U postgres -c "SELECT client_addr, state, sync_state, replay_lag FROM pg_stat_replication;" || true
+    kubectl exec -n "$NAMESPACE" postgres-postgresql-primary-0 -- \
+        env PGPASSWORD="$POSTGRES_PASSWORD" psql -U postgres -c "SELECT client_addr, state, sync_state, replay_lag FROM pg_stat_replication;" || true
 fi
 
 echo ""
