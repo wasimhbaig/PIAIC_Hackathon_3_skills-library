@@ -40,6 +40,43 @@ Automate Kubernetes foundation infrastructure setup with validation.
 
 [View Details →](./k8s-foundation/)
 
+### 📊 kafka-k8s-setup
+Deploy Apache Kafka on Kubernetes with automated topic creation and verification.
+
+**Features:**
+- 3-broker Kafka cluster with Zookeeper ensemble
+- Automated topic creation for event streaming (student-events, course-updates, assessment-results, analytics-stream)
+- Producer/consumer connectivity testing
+- Persistent storage with configurable retention policies
+- Production-ready resource limits and JVM tuning
+
+**Use Cases:**
+- Event streaming for microservices
+- Real-time analytics pipelines
+- Message queue for asynchronous processing
+- Event sourcing architectures
+
+[View Details →](./kafka-k8s-setup/)
+
+### 🗄️ postgres-k8s-setup
+Deploy PostgreSQL on Kubernetes with schema migrations and verification.
+
+**Features:**
+- Primary-replica PostgreSQL architecture
+- Version-controlled database migrations (15+ tables)
+- Complete learning platform schema (users, courses, assessments, analytics)
+- Automated schema verification and integrity checks
+- Read replicas with synchronous replication
+- Performance-tuned configuration
+
+**Use Cases:**
+- Persistent data storage for applications
+- Relational database with ACID guarantees
+- Analytics and reporting databases
+- Multi-tenant SaaS applications
+
+[View Details →](./postgres-k8s-setup/)
+
 ## Skill Structure
 
 Each skill follows a consistent structure:
@@ -125,7 +162,9 @@ skills-library/
 ├── README.md              # This file
 ├── CLAUDE.md              # Guidance for Claude Code
 ├── agents-md-gen/         # Agent documentation generator
-└── k8s-foundation/        # Kubernetes foundation setup
+├── k8s-foundation/        # Kubernetes foundation setup
+├── kafka-k8s-setup/       # Kafka deployment and topic management
+└── postgres-k8s-setup/    # PostgreSQL deployment with migrations
 ```
 
 ---

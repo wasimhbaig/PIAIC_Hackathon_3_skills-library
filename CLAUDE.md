@@ -22,12 +22,27 @@ skill-name/
 
 ### Current Skills
 
+**Phase 1: Documentation**
 - **agents-md-gen/**: Generates AGENTS.md documentation files
-  - Contains prompt template and example outputs
+  - Contains prompt template and example outputs for AI agent systems
 
+**Phase 2: Foundation Infrastructure**
 - **k8s-foundation/**: Kubernetes foundation setup
-  - Includes cluster check and base installation scripts
-  - Contains Helm charts for nginx and other base services
+  - Cluster health validation
+  - Nginx ingress controller deployment
+  - Base namespace structure
+
+**Phase 3: Stateful Infrastructure**
+- **kafka-k8s-setup/**: Apache Kafka event streaming
+  - 3-broker cluster with Zookeeper
+  - Automated topic creation for learning platform
+  - Producer/consumer verification
+
+- **postgres-k8s-setup/**: PostgreSQL relational database
+  - Primary-replica architecture
+  - Version-controlled migrations (15+ tables)
+  - Complete learning platform schema
+  - Automated verification and integrity checks
 
 ## Skills Development
 
@@ -52,7 +67,9 @@ When creating a new skill:
 
 Skills in this library fall into these categories:
 - **Documentation Generation**: Skills that create or update documentation (e.g., agents-md-gen)
-- **Infrastructure Setup**: Skills that configure infrastructure (e.g., k8s-foundation)
+- **Infrastructure Setup**: Skills that configure infrastructure
+  - Foundation: Base Kubernetes setup (k8s-foundation)
+  - Stateful: Event streaming and databases (kafka-k8s-setup, postgres-k8s-setup)
 
 ## Development Workflow
 
