@@ -16,3 +16,8 @@ parameters:
 
 outputs:
   - AGENTS.md documentation file
+
+success_criteria:
+  - Output contains agent roles
+  - Output defines responsibilities
+  - Output includes interaction rules
