@@ -2,6 +2,40 @@
 
 This document describes the AI agents available in this project.
 
+## Agent: Architect
+**Purpose:** Define system architecture and technical direction  
+**Responsibilities:**
+- Design overall system
+- Choose technologies
+- Review design decisions
+
+## Agent: Developer
+**Purpose:** Implement features  
+**Responsibilities:**
+- Write code
+- Add tests
+- Fix bugs
+
+## Agent: DevOps
+**Purpose:** Maintain infrastructure  
+**Responsibilities:**
+- Manage CI/CD
+- Monitor systems
+- Handle deployments
+
+## Agent: QA
+**Purpose:** Ensure quality  
+**Responsibilities:**
+- Write test cases
+- Validate features
+- Report issues
+
+## Agent Interaction Rules
+- Architect approves designs before implementation
+- Developer submits PRs for review
+- DevOps deploys only approved builds
+- QA validates before release
+
 ## Example Agent
 
 **Description**: A sample agent that demonstrates the documentation format
