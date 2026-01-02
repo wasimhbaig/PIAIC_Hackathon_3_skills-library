@@ -35,3 +35,11 @@ outputs:
   - Nginx ingress controller deployed
   - Base namespace structure created
   - Cluster validation report
+
+success_criteria:
+  - Cluster is accessible and responsive
+  - All nodes are in Ready state
+  - Nginx ingress controller pods are running
+  - CoreDNS is operational
+  - Base namespaces created successfully
+  - Ingress controller service is available
