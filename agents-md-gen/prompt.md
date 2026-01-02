@@ -36,6 +36,18 @@ Analyze the agent configurations in the codebase and generate comprehensive AGEN
 4. Ensure consistency in formatting across all agent entries
 5. Include practical examples where available
 
+## Rules
+
+- Use clear markdown
+- Define at least 4 agents
+- Each agent must have:
+  - Name
+  - Purpose
+  - Responsibilities
+- Include a section on agent interaction rules
+- Do NOT explain your reasoning
+- Output ONLY the AGENTS.md content
+
 ## Output Format
 
 The output should be a well-formatted Markdown file suitable for developer reference.
