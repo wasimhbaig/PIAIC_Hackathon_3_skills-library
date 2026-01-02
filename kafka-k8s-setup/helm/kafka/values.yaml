@@ -1,0 +1,103 @@
+# Kafka Helm Values
+# Based on Bitnami Kafka chart
+
+replicaCount: 3
+
+## Kafka configuration
+listeners:
+  client:
+    protocol: PLAINTEXT
+  controller:
+    protocol: PLAINTEXT
+  interbroker:
+    protocol: PLAINTEXT
+
+## Controller configuration
+controller:
+  replicaCount: 3
+
+## Persistence
+persistence:
+  enabled: true
+  storageClass: ""
+  size: 10Gi
+
+## Resource limits
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+## JVM settings
+heapOpts: "-Xmx1024m -Xms1024m"
+
+## Zookeeper
+zookeeper:
+  enabled: true
+  replicaCount: 3
+  persistence:
+    enabled: true
+    size: 8Gi
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+
+## Kafka configuration parameters
+config:
+  # Log retention
+  logRetentionHours: 168
+  logRetentionBytes: _1073741824
+
+  # Segment settings
+  logSegmentBytes: _1073741824
+
+  # Replication
+  defaultReplicationFactor: 2
+  minInsyncReplicas: 1
+  offsetsTopicReplicationFactor: 3
+
+  # Performance
+  numNetworkThreads: 3
+  numIoThreads: 8
+  socketSendBufferBytes: 102400
+  socketReceiveBufferBytes: 102400
+  socketRequestMaxBytes: 104857600
+
+  # Partitions
+  numPartitions: 3
+
+  # Compression
+  compressionType: producer
+
+## Metrics (Prometheus)
+metrics:
+  kafka:
+    enabled: true
+  jmx:
+    enabled: true
+
+## Service configuration
+service:
+  type: ClusterIP
+  ports:
+    client: 9092
+
+## Security
+auth:
+  clientProtocol: plaintext
+  interBrokerProtocol: plaintext
+
+## Auto create topics
+autoCreateTopicsEnable: false
+deleteTopicEnable: true
+
+## Log flush settings
+logFlushIntervalMessages: _10000
+logFlushIntervalMs: 1000

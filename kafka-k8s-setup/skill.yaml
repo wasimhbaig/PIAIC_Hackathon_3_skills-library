@@ -1,0 +1,55 @@
+name: kafka-k8s-setup
+description: Deploy Apache Kafka on Kubernetes with topic creation and verification
+version: 1.0.0
+category: infrastructure
+
+parameters:
+  - name: namespace
+    description: Kubernetes namespace for Kafka deployment
+    required: false
+    default: "kafka"
+
+  - name: broker_count
+    description: Number of Kafka broker replicas
+    required: false
+    default: 3
+
+  - name: create_topics
+    description: Automatically create default topics
+    required: false
+    default: true
+
+  - name: verify_deployment
+    description: Run verification checks after deployment
+    required: false
+    default: true
+
+prerequisites:
+  - kubectl
+  - helm (v3+)
+  - Kubernetes cluster with 6GB+ memory
+  - Storage class for persistent volumes
+  - cluster-admin permissions
+
+scripts:
+  - scripts/deploy-kafka.sh
+  - scripts/create-topics.sh
+  - scripts/verify-kafka.sh
+
+helm_charts:
+  - helm/kafka
+
+outputs:
+  - Kafka cluster deployed with 3 brokers
+  - Zookeeper ensemble running
+  - Default topics created
+  - Connectivity verification report
+
+success_criteria:
+  - All Kafka broker pods are running and ready
+  - Zookeeper ensemble is healthy (3 nodes)
+  - Kafka brokers accessible on port 9092
+  - Default topics created successfully
+  - Producer can write messages to topics
+  - Consumer can read messages from topics
+  - No broker connectivity errors in logs
