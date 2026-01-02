@@ -1,10 +1,15 @@
 #!/bin/bash
 set -e
 
+# Get the directory of this script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SKILL_DIR="$(dirname "$SCRIPT_DIR")"
+
 NAMESPACE=${NAMESPACE:-"postgres"}
 DATABASE_NAME=${DATABASE_NAME:-"learning_platform"}
 POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-"postgres123"}
 HELM_TIMEOUT=${HELM_TIMEOUT:-"10m"}
+VALUES_FILE="$SKILL_DIR/helm/postgresql/values.yaml"
 
 echo "=== Deploying PostgreSQL on Kubernetes ==="
 echo ""
@@ -32,22 +37,29 @@ helm repo add bitnami https://charts.bitnami.com/bitnami
 helm repo update
 echo "   ✓ Helm repositories updated"
 
+# Check values file exists
+if [ ! -f "$VALUES_FILE" ]; then
+    echo "Error: Values file not found: $VALUES_FILE"
+    exit 1
+fi
+
 # Deploy PostgreSQL
 echo ""
 echo "3. Deploying PostgreSQL..."
+echo "   Using values file: $VALUES_FILE"
 if helm status postgres -n "$NAMESPACE" &> /dev/null; then
     echo "   ⚠ PostgreSQL already installed, upgrading..."
     helm upgrade postgres bitnami/postgresql \
         -n "$NAMESPACE" \
         --timeout "$HELM_TIMEOUT" \
-        -f helm/postgresql/values.yaml \
+        -f "$VALUES_FILE" \
         --set auth.postgresPassword="$POSTGRES_PASSWORD" \
         --set auth.database="$DATABASE_NAME"
 else
     helm install postgres bitnami/postgresql \
         -n "$NAMESPACE" \
         --timeout "$HELM_TIMEOUT" \
-        -f helm/postgresql/values.yaml \
+        -f "$VALUES_FILE" \
         --set auth.postgresPassword="$POSTGRES_PASSWORD" \
         --set auth.database="$DATABASE_NAME"
 fi

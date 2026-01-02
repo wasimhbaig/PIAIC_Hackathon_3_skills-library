@@ -1,9 +1,14 @@
 #!/bin/bash
 set -e
 
+# Get the directory of this script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SKILL_DIR="$(dirname "$SCRIPT_DIR")"
+
 NAMESPACE=${NAMESPACE:-"kafka"}
 BROKER_COUNT=${BROKER_COUNT:-3}
 HELM_TIMEOUT=${HELM_TIMEOUT:-"10m"}
+VALUES_FILE="$SKILL_DIR/helm/kafka/values.yaml"
 
 echo "=== Deploying Kafka on Kubernetes ==="
 echo ""
@@ -11,12 +16,12 @@ echo ""
 # Check prerequisites
 if ! command -v helm &> /dev/null; then
     echo "Error: helm is not installed"
-    exit 1
+#    exit 1
 fi
 
 if ! command -v kubectl &> /dev/null; then
     echo "Error: kubectl is not installed"
-    exit 1
+#    exit 1
 fi
 
 # Create namespace
@@ -31,21 +36,28 @@ helm repo add bitnami https://charts.bitnami.com/bitnami
 helm repo update
 echo "   ✓ Helm repositories updated"
 
+# Check values file exists
+if [ ! -f "$VALUES_FILE" ]; then
+    echo "Error: Values file not found: $VALUES_FILE"
+    exit 1
+fi
+
 # Deploy Kafka
 echo ""
 echo "3. Deploying Kafka cluster with $BROKER_COUNT brokers..."
+echo "   Using values file: $VALUES_FILE"
 if helm status kafka -n "$NAMESPACE" &> /dev/null; then
     echo "   ⚠ Kafka already installed, upgrading..."
     helm upgrade kafka bitnami/kafka \
         -n "$NAMESPACE" \
         --timeout "$HELM_TIMEOUT" \
-        -f helm/kafka/values.yaml \
+        -f "$VALUES_FILE" \
         --set replicaCount="$BROKER_COUNT"
 else
     helm install kafka bitnami/kafka \
         -n "$NAMESPACE" \
         --timeout "$HELM_TIMEOUT" \
-        -f helm/kafka/values.yaml \
+        -f "$VALUES_FILE" \
         --set replicaCount="$BROKER_COUNT"
 fi
 echo "   ✓ Kafka Helm release deployed"

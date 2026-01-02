@@ -1,9 +1,13 @@
 #!/bin/bash
 set -e
 
+# Get the directory of this script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SKILL_DIR="$(dirname "$SCRIPT_DIR")"
+
 NAMESPACE=${NAMESPACE:-"postgres"}
 DATABASE_NAME=${DATABASE_NAME:-"learning_platform"}
-MIGRATIONS_DIR="migrations"
+MIGRATIONS_DIR="$SKILL_DIR/migrations"
 
 echo "=== Running PostgreSQL Migrations ==="
 echo ""
