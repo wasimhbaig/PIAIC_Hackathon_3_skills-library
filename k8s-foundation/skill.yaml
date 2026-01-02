@@ -1,0 +1,37 @@
+name: k8s-foundation
+description: Setup Kubernetes foundation infrastructure with validation and base services
+version: 1.0.0
+category: infrastructure
+
+parameters:
+  - name: namespace
+    description: Target namespace for base services
+    required: false
+    default: "default"
+
+  - name: cluster_context
+    description: Kubernetes context to use
+    required: false
+    default: "current"
+
+  - name: skip_validation
+    description: Skip cluster health checks
+    required: false
+    default: false
+
+prerequisites:
+  - kubectl
+  - helm (v3+)
+  - cluster-admin permissions
+
+scripts:
+  - scripts/check-cluster.sh
+  - scripts/install-base.sh
+
+helm_charts:
+  - helm/nginx
+
+outputs:
+  - Nginx ingress controller deployed
+  - Base namespace structure created
+  - Cluster validation report

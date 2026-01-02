@@ -1,0 +1,18 @@
+name: agents-md-gen
+description: Generate AGENTS.md documentation for AI agents in a codebase
+version: 1.0.0
+category: documentation
+
+parameters:
+  - name: input_path
+    description: Path to agent configuration files
+    required: false
+    default: "."
+
+  - name: output_file
+    description: Output file path
+    required: false
+    default: "AGENTS.md"
+
+outputs:
+  - AGENTS.md documentation file

@@ -1,0 +1,46 @@
+# Nginx Ingress Controller Values
+
+controller:
+  replicaCount: 2
+
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  service:
+    type: LoadBalancer
+    annotations: {}
+
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: false
+
+  podAnnotations: {}
+
+  config:
+    use-forwarded-headers: "true"
+    compute-full-forwarded-for: "true"
+    use-proxy-protocol: "false"
+
+defaultBackend:
+  enabled: true
+  replicaCount: 1
+
+  resources:
+    limits:
+      cpu: 20m
+      memory: 32Mi
+    requests:
+      cpu: 10m
+      memory: 16Mi
+
+rbac:
+  create: true
+
+serviceAccount:
+  create: true
