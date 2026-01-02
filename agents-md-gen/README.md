@@ -21,3 +21,12 @@ Generates an `AGENTS.md` file with:
 ## Example
 
 See `example-output/AGENTS.md` for a sample generated file.
+
+## Single Prompt Example
+
+Project prompt:
+> We are building an AI-powered learning platform using microservices, Kubernetes, and AI agents.
+
+Result:
+- A complete AGENTS.md is generated using this skill
+

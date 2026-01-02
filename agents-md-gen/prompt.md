@@ -2,7 +2,9 @@
 
 ## Task
 
+We are building an AI-powered learning platform using microservices, Kubernetes, and AI agents.
 Analyze the agent configurations in the codebase and generate comprehensive AGENTS.md documentation.
+
 
 ## Instructions
 

@@ -1,87 +1,151 @@
 # Agents
 
-This document describes the AI agents available in this project.
+## Agent: Content Delivery Agent
 
-## Agent: Architect
-**Purpose:** Define system architecture and technical direction  
-**Responsibilities:**
-- Design overall system
-- Choose technologies
-- Review design decisions
+**Purpose:** Manage and deliver course content to students in the learning platform
 
-## Agent: Developer
-**Purpose:** Implement features  
 **Responsibilities:**
-- Write code
-- Add tests
-- Fix bugs
+- Retrieve course materials from content repository
+- Stream video lectures and interactive content
+- Track content consumption progress
+- Cache frequently accessed materials
+- Handle content versioning and updates
 
-## Agent: DevOps
-**Purpose:** Maintain infrastructure  
-**Responsibilities:**
-- Manage CI/CD
-- Monitor systems
-- Handle deployments
+**Capabilities:**
+- Content retrieval from S3/object storage
+- Video transcoding and adaptive streaming
+- Progress tracking and analytics
+- Cache management with Redis
+- CDN integration for global delivery
 
-## Agent: QA
-**Purpose:** Ensure quality  
+**Configuration:**
+- `storage_backend`: S3, GCS, or Azure Blob (default: S3)
+- `cache_ttl`: Content cache duration in seconds (default: 3600)
+- `cdn_enabled`: Enable CDN for content delivery (default: true)
+- `max_concurrent_streams`: Maximum concurrent video streams per user (default: 3)
+
+## Agent: Student Support Agent
+
+**Purpose:** Provide intelligent assistance and support to students
+
 **Responsibilities:**
-- Write test cases
-- Validate features
-- Report issues
+- Answer student questions about courses and platform
+- Troubleshoot technical issues
+- Provide personalized learning recommendations
+- Escalate complex queries to human support
+- Generate support tickets and track resolution
+
+**Capabilities:**
+- Natural language understanding with LLM
+- RAG-based knowledge retrieval from course materials
+- Integration with support ticketing system
+- Sentiment analysis for student satisfaction
+- Multi-language support
+
+**Configuration:**
+- `llm_model`: AI model for responses (default: claude-sonnet-4.5)
+- `escalation_threshold`: Confidence threshold for human escalation (default: 0.7)
+- `max_conversation_length`: Maximum turns in conversation (default: 20)
+- `supported_languages`: Languages for student interaction (default: ["en", "ur"])
+
+## Agent: Assessment Agent
+
+**Purpose:** Manage student assessments and provide intelligent evaluation
+
+**Responsibilities:**
+- Generate quiz questions from course content
+- Evaluate student submissions
+- Provide detailed feedback on answers
+- Detect plagiarism and cheating patterns
+- Track assessment performance metrics
+
+**Capabilities:**
+- Question generation from learning objectives
+- Automated grading with rubric support
+- Code execution and testing for programming assignments
+- Plagiarism detection using similarity analysis
+- Performance analytics and insights
+
+**Configuration:**
+- `question_difficulty`: Auto-adjust question difficulty (default: adaptive)
+- `code_execution_timeout`: Timeout for code evaluation in seconds (default: 30)
+- `plagiarism_threshold`: Similarity threshold for plagiarism detection (default: 0.85)
+- `feedback_detail_level`: Feedback verbosity (default: detailed)
+
+## Agent: Infrastructure Agent
+
+**Purpose:** Manage Kubernetes infrastructure and platform operations
+
+**Responsibilities:**
+- Deploy and scale microservices
+- Monitor cluster health and resource usage
+- Handle auto-scaling based on load
+- Manage configuration and secrets
+- Perform automated rollbacks on failures
+
+**Capabilities:**
+- Kubernetes cluster management
+- Helm chart deployment and upgrades
+- Horizontal Pod Autoscaling (HPA)
+- Prometheus metrics collection
+- Automated incident response
+
+**Configuration:**
+- `cluster_context`: Target Kubernetes cluster (default: production)
+- `scaling_policy`: Auto-scaling strategy (default: cpu-based)
+- `min_replicas`: Minimum pod replicas (default: 2)
+- `max_replicas`: Maximum pod replicas (default: 10)
+- `health_check_interval`: Health check frequency in seconds (default: 30)
+
+## Agent: Analytics Agent
+
+**Purpose:** Track and analyze learning metrics and platform performance
+
+**Responsibilities:**
+- Collect student engagement metrics
+- Analyze learning patterns and outcomes
+- Generate insights and recommendations
+- Track platform usage and performance
+- Create dashboards and reports
+
+**Capabilities:**
+- Real-time metrics collection with ClickHouse
+- Student journey tracking and cohort analysis
+- Predictive analytics for student success
+- A/B testing for platform features
+- Custom report generation
+
+**Configuration:**
+- `metrics_retention_days`: Days to retain raw metrics (default: 90)
+- `aggregation_interval`: Metrics aggregation interval (default: 1h)
+- `dashboard_refresh_rate`: Dashboard update frequency in seconds (default: 60)
+- `anomaly_detection_enabled`: Enable anomaly detection (default: true)
 
 ## Agent Interaction Rules
-- Architect approves designs before implementation
-- Developer submits PRs for review
-- DevOps deploys only approved builds
-- QA validates before release
 
-## Example Agent
+### Content Delivery → Student Support
+- Content Delivery Agent notifies Student Support Agent when content delivery fails
+- Student Support Agent can request content re-delivery or alternative formats
 
-**Description**: A sample agent that demonstrates the documentation format
+### Student Support → Assessment
+- Student Support Agent can query Assessment Agent for student performance data
+- Assessment Agent provides context for personalized support recommendations
 
-**Capabilities**:
-- Code analysis and generation
-- File operations (read, write, edit)
-- Shell command execution
-- Web search and fetch
+### Assessment → Analytics
+- Assessment Agent sends all evaluation results to Analytics Agent
+- Analytics Agent provides performance trends back to Assessment Agent for adaptive difficulty
 
-**Usage**:
-```bash
-# Invoke the agent with a task
-agent-command "analyze the codebase"
-```
+### Infrastructure → All Agents
+- Infrastructure Agent monitors health of all agent services
+- All agents report metrics to Infrastructure Agent for scaling decisions
+- Infrastructure Agent can restart or scale any agent based on load
 
-**Configuration**:
-- `model`: The AI model to use (default: "sonnet-4.5")
-- `temperature`: Response randomness (default: 0.7)
-- `max_tokens`: Maximum response length (default: 4000)
+### Analytics → Content Delivery
+- Analytics Agent identifies popular content for caching prioritization
+- Content Delivery Agent adjusts cache strategy based on analytics insights
 
-**Tools Available**:
-- Bash: Execute shell commands
-- Read/Write/Edit: File operations
-- Grep/Glob: Code search
-- WebSearch/WebFetch: Internet access
-
----
-
-## Documentation Generator Agent
-
-**Description**: Specialized agent for generating and maintaining documentation
-
-**Capabilities**:
-- Automatic README generation
-- API documentation creation
-- Code comment analysis
-- Documentation structure validation
-
-**Usage**:
-```bash
-# Generate documentation for a project
-doc-gen --input ./src --output ./docs
-```
-
-**Configuration**:
-- `format`: Documentation format (markdown, html, pdf)
-- `include_examples`: Include code examples (default: true)
-- `style_guide`: Documentation style guide to follow
+### Workflow
+1. Student Support Agent uses Content Delivery Agent to fetch materials when answering questions
+2. Assessment Agent coordinates with Infrastructure Agent for code execution sandboxes
+3. All agents send telemetry to Analytics Agent for platform-wide insights
+4. Infrastructure Agent maintains optimal resource allocation based on Analytics recommendations
