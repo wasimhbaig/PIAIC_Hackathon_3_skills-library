@@ -102,6 +102,22 @@ Edit `helm/kafka/values.yaml` to customize:
 
 ## Troubleshooting
 
+### Image Pull Errors
+If you see `ImagePullBackOff` errors:
+```bash
+kubectl describe pod -n kafka kafka-controller-0
+```
+
+**Solution**: Update the image tag in `helm/kafka/values.yaml`:
+```yaml
+image:
+  registry: docker.io
+  repository: bitnami/kafka
+  tag: "3.6.1"  # or use latest available version
+```
+
+Note: Bitnami changed image distribution policy (Aug 2025). Newer images may require subscription.
+
 ### Pods not starting
 ```bash
 kubectl describe pods -n kafka -l app.kubernetes.io/name=kafka

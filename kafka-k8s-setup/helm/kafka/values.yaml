@@ -3,6 +3,14 @@
 
 replicaCount: 3
 
+## Image configuration
+## Note: Adjust image tag based on your environment and available images
+## Bitnami images may require subscription for newer versions
+image:
+  registry: docker.io
+  repository: bitnami/kafka
+  tag: "3.6.1"  # Use a stable publicly available version
+
 ## Kafka configuration
 listeners:
   client:
