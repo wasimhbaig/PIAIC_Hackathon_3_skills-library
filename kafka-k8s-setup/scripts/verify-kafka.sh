@@ -9,39 +9,39 @@ echo ""
 
 # Check Kafka pods
 echo "1. Checking Kafka broker pods..."
-KAFKA_PODS=$(kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/name=kafka --no-headers 2>/dev/null | wc -l)
-KAFKA_READY=$(kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/name=kafka --field-selector=status.phase=Running --no-headers 2>/dev/null | wc -l)
+KAFKA_PODS=$(kubectl get pods -n "$NAMESPACE" -l app=kafka --no-headers 2>/dev/null | wc -l)
+KAFKA_READY=$(kubectl get pods -n "$NAMESPACE" -l app=kafka --field-selector=status.phase=Running --no-headers 2>/dev/null | wc -l)
 echo "   Total Kafka pods: $KAFKA_PODS"
 echo "   Running pods: $KAFKA_READY"
 
 if [ "$KAFKA_PODS" -eq "$KAFKA_READY" ] && [ "$KAFKA_READY" -gt 0 ]; then
-    echo "   ✓ All Kafka broker pods are running"
+    echo "   ✓ All Kafka broker pods are running ($KAFKA_READY/$KAFKA_PODS)"
 else
-    echo "   ✗ Some Kafka pods are not running"
-    kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/name=kafka
+    echo "   ✗ Some Kafka pods are not running ($KAFKA_READY/$KAFKA_PODS)"
+    kubectl get pods -n "$NAMESPACE" -l app=kafka
     exit 1
 fi
 
 # Check Zookeeper pods
 echo ""
 echo "2. Checking Zookeeper ensemble..."
-ZK_PODS=$(kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/component=zookeeper --no-headers 2>/dev/null | wc -l)
-ZK_READY=$(kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/component=zookeeper --field-selector=status.phase=Running --no-headers 2>/dev/null | wc -l)
+ZK_PODS=$(kubectl get pods -n "$NAMESPACE" -l app=zookeeper --no-headers 2>/dev/null | wc -l)
+ZK_READY=$(kubectl get pods -n "$NAMESPACE" -l app=zookeeper --field-selector=status.phase=Running --no-headers 2>/dev/null | wc -l)
 echo "   Total Zookeeper pods: $ZK_PODS"
 echo "   Running pods: $ZK_READY"
 
 if [ "$ZK_PODS" -eq "$ZK_READY" ] && [ "$ZK_READY" -gt 0 ]; then
-    echo "   ✓ Zookeeper ensemble is healthy"
+    echo "   ✓ Zookeeper ensemble is healthy ($ZK_READY/$ZK_PODS)"
 else
-    echo "   ✗ Some Zookeeper pods are not running"
-    kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/component=zookeeper
+    echo "   ✗ Some Zookeeper pods are not running ($ZK_READY/$ZK_PODS)"
+    kubectl get pods -n "$NAMESPACE" -l app=zookeeper
     exit 1
 fi
 
 # Check broker connectivity
 echo ""
 echo "3. Checking broker connectivity..."
-if kubectl exec -n "$NAMESPACE" kafka-0 -- kafka-broker-api-versions.sh --bootstrap-server "$BROKER" &> /dev/null; then
+if kubectl exec -n "$NAMESPACE" kafka-0 -- kafka-broker-api-versions --bootstrap-server "$BROKER" &> /dev/null; then
     echo "   ✓ Brokers are accessible on port 9092"
 else
     echo "   ✗ Cannot connect to brokers"
@@ -51,12 +51,12 @@ fi
 # List brokers
 echo ""
 echo "4. Listing Kafka brokers..."
-kubectl exec -n "$NAMESPACE" kafka-0 -- kafka-broker-api-versions.sh --bootstrap-server "$BROKER" | head -5
+kubectl exec -n "$NAMESPACE" kafka-0 -- kafka-broker-api-versions --bootstrap-server "$BROKER" | head -5
 
 # Check topics
 echo ""
 echo "5. Checking topics..."
-TOPICS=$(kubectl exec -n "$NAMESPACE" kafka-0 -- kafka-topics.sh --list --bootstrap-server "$BROKER" 2>/dev/null)
+TOPICS=$(kubectl exec -n "$NAMESPACE" kafka-0 -- kafka-topics --list --bootstrap-server "$BROKER" 2>/dev/null)
 TOPIC_COUNT=$(echo "$TOPICS" | grep -v "^$" | wc -l)
 echo "   Total topics: $TOPIC_COUNT"
 
@@ -74,30 +74,33 @@ echo ""
 echo "6. Testing producer/consumer connectivity..."
 TEST_TOPIC="test-connectivity-$(date +%s)"
 
-# Create test topic
-kubectl exec -n "$NAMESPACE" kafka-0 -- kafka-topics.sh \
+# Create test topic with RF=3 to meet min ISR requirement
+kubectl exec -n "$NAMESPACE" kafka-0 -- kafka-topics \
     --create \
     --if-not-exists \
     --bootstrap-server "$BROKER" \
     --topic "$TEST_TOPIC" \
     --partitions 1 \
-    --replication-factor 1 &> /dev/null
+    --replication-factor 3 &> /dev/null
+
+sleep 2  # Wait for leader election and ISR sync
 
 # Produce test message
-echo "test-message-$(date +%s)" | kubectl exec -i -n "$NAMESPACE" kafka-0 -- kafka-console-producer.sh \
-    --bootstrap-server "$BROKER" \
-    --topic "$TEST_TOPIC" &> /dev/null
+TEST_MSG_CONTENT="test-message-$(date +%s)"
+kubectl exec -n "$NAMESPACE" kafka-0 -- sh -c "echo '$TEST_MSG_CONTENT' | kafka-console-producer --bootstrap-server $BROKER --topic $TEST_TOPIC" &> /dev/null
+
+sleep 1  # Wait for message to be written and replicated
 
 # Consume test message
-TEST_MSG=$(kubectl exec -n "$NAMESPACE" kafka-0 -- kafka-console-consumer.sh \
+TEST_MSG=$(kubectl exec -n "$NAMESPACE" kafka-0 -- kafka-console-consumer \
     --bootstrap-server "$BROKER" \
     --topic "$TEST_TOPIC" \
     --from-beginning \
     --max-messages 1 \
-    --timeout-ms 5000 2>/dev/null || true)
+    --timeout-ms 5000 2>/dev/null | head -1 || true)
 
 # Delete test topic
-kubectl exec -n "$NAMESPACE" kafka-0 -- kafka-topics.sh \
+kubectl exec -n "$NAMESPACE" kafka-0 -- kafka-topics \
     --delete \
     --bootstrap-server "$BROKER" \
     --topic "$TEST_TOPIC" &> /dev/null || true
