@@ -1,0 +1,108 @@
+# PostgreSQL Helm Values
+# Based on Bitnami PostgreSQL chart
+
+## PostgreSQL architecture
+architecture: replication
+
+## Authentication
+auth:
+  enablePostgresUser: true
+  postgresPassword: "postgres123"
+  username: "appuser"
+  password: "appuser123"
+  database: "learning_platform"
+
+## Primary configuration
+primary:
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+
+  persistence:
+    enabled: true
+    storageClass: ""
+    size: 10Gi
+
+  ## PostgreSQL configuration
+  extendedConfiguration: |
+    max_connections = 200
+    shared_buffers = 256MB
+    effective_cache_size = 1GB
+    maintenance_work_mem = 64MB
+    checkpoint_completion_target = 0.9
+    wal_buffers = 16MB
+    default_statistics_target = 100
+    random_page_cost = 1.1
+    effective_io_concurrency = 200
+    work_mem = 2621kB
+    min_wal_size = 1GB
+    max_wal_size = 4GB
+    max_worker_processes = 4
+    max_parallel_workers_per_gather = 2
+    max_parallel_workers = 4
+
+## Read replicas
+readReplicas:
+  replicaCount: 2
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+
+  persistence:
+    enabled: true
+    size: 10Gi
+
+## Metrics (Prometheus)
+metrics:
+  enabled: true
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+  serviceMonitor:
+    enabled: false
+
+## Backup configuration
+backup:
+  enabled: false
+  cronjob:
+    schedule: "0 2 * * *"
+    storage:
+      size: 10Gi
+
+## PostgreSQL parameters
+postgresqlSharedPreloadLibraries: "pg_stat_statements"
+postgresqlMaxConnections: 200
+
+## Replication
+replication:
+  enabled: true
+  numSynchronousReplicas: 1
+  synchronousCommit: "on"
+
+## Network Policy
+networkPolicy:
+  enabled: false
+
+## Service configuration
+service:
+  type: ClusterIP
+  ports:
+    postgresql: 5432
+
+## Volume permissions
+volumePermissions:
+  enabled: true

@@ -1,0 +1,61 @@
+name: postgres-k8s-setup
+description: Deploy PostgreSQL on Kubernetes with schema migrations and verification
+version: 1.0.0
+category: infrastructure
+
+parameters:
+  - name: namespace
+    description: Kubernetes namespace for PostgreSQL deployment
+    required: false
+    default: "postgres"
+
+  - name: database_name
+    description: Name of the database to create
+    required: false
+    default: "learning_platform"
+
+  - name: enable_replication
+    description: Enable read replicas
+    required: false
+    default: true
+
+  - name: run_migrations
+    description: Automatically run database migrations
+    required: false
+    default: true
+
+  - name: verify_deployment
+    description: Run verification checks after deployment
+    required: false
+    default: true
+
+prerequisites:
+  - kubectl
+  - helm (v3+)
+  - Kubernetes cluster with 2GB+ memory
+  - Storage class for persistent volumes
+  - cluster-admin permissions
+
+scripts:
+  - scripts/deploy-postgres.sh
+  - scripts/run-migrations.sh
+  - scripts/verify-postgres.sh
+
+helm_charts:
+  - helm/postgresql
+
+outputs:
+  - PostgreSQL primary instance deployed
+  - Read replicas configured (if enabled)
+  - Database schema migrated
+  - Connectivity verification report
+
+success_criteria:
+  - PostgreSQL primary pod is running and ready
+  - Database is accessible on port 5432
+  - All migrations applied successfully
+  - Schema tables created correctly
+  - Can execute SELECT queries
+  - Can execute INSERT queries
+  - Read replicas synchronized (if enabled)
+  - No connection errors in logs
